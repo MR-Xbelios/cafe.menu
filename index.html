@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Restaurant Menu Ordering</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center p-4">
+  <h1 class="text-3xl font-bold mb-6">🍴 Our Menu</h1>
+
+  <!-- Menu Items -->
+  <div id="menu" class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-3xl">
+    <!-- Example menu items populated dynamically -->
+  </div>
+
+  <!-- Cart Section -->
+  <div class="mt-8 w-full max-w-3xl bg-white shadow-md rounded-lg p-4">
+    <h2 class="text-2xl font-semibold mb-4">🛒 Your Cart</h2>
+    <ul id="cart-items" class="divide-y divide-gray-200"></ul>
+    <p class="font-bold mt-4">Total: ₹<span id="total">0</span></p>
+
+    <div id="checkout-section" class="mt-4 hidden">
+      <h3 class="text-xl font-semibold mb-2">Checkout</h3>
+      <button onclick="payWithUPI()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded mr-2">Pay with UPI</button>
+      <button onclick="cashOnDelivery()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Cash on Delivery</button>
+    </div>
+  </div>
+
+  <!-- QR Code Modal -->
+  <div id="qrModal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50">
+    <div class="bg-white p-6 rounded shadow-md text-center">
+      <h3 class="text-xl font-semibold mb-2">Scan to Pay (UPI)</h3>
+      <canvas id="qr-code" class="mx-auto mb-4"></canvas>
+      <button onclick="closeQR()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">Close</button>
+    </div>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div id="confirmModal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50">
+    <div class="bg-white p-6 rounded shadow-md text-center">
+      <h3 class="text-xl font-semibold mb-2">✅ Order Confirmed</h3>
+      <p id="orderDetails" class="mb-4 text-gray-700"></p>
+      <button onclick="closeConfirm()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">OK</button>
+    </div>
+  </div>
+
+  <script>
+    const menuItems = [
+      { name: "Margherita Pizza", price: 250 },
+      { name: "Paneer Butter Masala", price: 300 },
+      { name: "Veg Biryani", price: 220 },
+      { name: "Masala Dosa", price: 150 },
+    ];
+
+    const cart = [];
+    const menuContainer = document.getElementById("menu");
+    const cartItemsEl = document.getElementById("cart-items");
+    const totalEl = document.getElementById("total");
+    const checkoutSection = document.getElementById("checkout-section");
+
+    // Render menu
+    menuItems.forEach((item, index) => {
+      const div = document.createElement("div");
+      div.className = "bg-white p-4 shadow rounded flex justify-between items-center";
+      div.innerHTML = `
+        <div>
+          <h3 class="font-semibold">${item.name}</h3>
+          <p class="text-gray-600">₹${item.price}</p>
+        </div>
+        <button onclick="addToCart(${index})"
+          class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded">Add</button>
+      `;
+      menuContainer.appendChild(div);
+    });
+
+    // Add to cart
+    function addToCart(index) {
+      cart.push(menuItems[index]);
+      renderCart();
+    }
+
+    function renderCart() {
+      cartItemsEl.innerHTML = "";
+      let total = 0;
+      cart.forEach((item) => {
+        const li = document.createElement("li");
+        li.className = "py-2 flex justify-between";
+        li.innerHTML = `<span>${item.name}</span><span>₹${item.price}</span>`;
+        cartItemsEl.appendChild(li);
+        total += item.price;
+      });
+      totalEl.textContent = total;
+      checkoutSection.classList.toggle("hidden", cart.length === 0);
+    }
+
+    // Checkout options
+    function payWithUPI() {
+      const upiLink = `upi://pay?pa=samar.78@fam&pn=Restaurant&am=${totalEl.textContent}&cu=INR`;
+      QRCode.toCanvas(document.getElementById("qr-code"), upiLink, function (error) {
+        if (error) console.error(error);
+      });
+      document.getElementById("qrModal").classList.remove("hidden");
+      document.getElementById("qrModal").classList.add("flex");
+    }
+
+    function cashOnDelivery() {
+      showConfirmation("Cash on Delivery");
+    }
+
+    function showConfirmation(method) {
+      const details = cart.map(item => `${item.name} - ₹${item.price}`).join(", ");
+      document.getElementById("orderDetails").textContent =
+        `Payment Method: ${method}\nItems: ${details}\nTotal: ₹${totalEl.textContent}`;
+      
+      document.getElementById("confirmModal").classList.remove("hidden");
+      document.getElementById("confirmModal").classList.add("flex");
+      
+      // Clear cart
+      cart.length = 0;
+      renderCart();
+    }
+
+    function closeQR() {
+      document.getElementById("qrModal").classList.add("hidden");
+    }
+
+    function closeConfirm() {
+      document.getElementById("confirmModal").classList.add("hidden");
+    }
+  </script>
+</body>
+</html>
